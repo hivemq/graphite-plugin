@@ -27,7 +27,6 @@ import com.hivemq.spi.callback.CallbackPriority;
 import com.hivemq.spi.callback.events.broker.OnBrokerStart;
 import com.hivemq.spi.callback.events.broker.OnBrokerStop;
 import com.hivemq.spi.callback.exception.BrokerUnableToStartException;
-import com.hivemq.spi.metrics.annotations.Timed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +60,17 @@ public class GraphiteReporting implements OnBrokerStart, OnBrokerStop {
         addRestartListener();
     }
 
+    @Override
+    public void onBrokerStop() {
+        reporter.stop();
+    }
+
+    @Override
+    public int priority() {
+        return CallbackPriority.MEDIUM;
+    }
+
+
     private void addRestartListener() {
 
         graphiteConfiguration.setRestartListener(new GraphiteConfiguration.RestartListener() {
@@ -74,11 +84,6 @@ public class GraphiteReporting implements OnBrokerStart, OnBrokerStop {
 
     }
 
-    @Override
-    public void onBrokerStop() {
-        reporter.stop();
-    }
-
     private void startGraphiteReporting() {
         setupGraphiteSender();
         setupGraphiteReporter();
@@ -86,12 +91,6 @@ public class GraphiteReporting implements OnBrokerStart, OnBrokerStop {
         reporter.start(graphiteConfiguration.getReportingInterval(), TimeUnit.SECONDS);
     }
 
-    @Override
-    public int priority() {
-        return CallbackPriority.MEDIUM;
-    }
-
-    @Timed
     private void setupGraphiteReporter() {
         String prefix = graphiteConfiguration.getPrefix();
         if (prefix == null) {

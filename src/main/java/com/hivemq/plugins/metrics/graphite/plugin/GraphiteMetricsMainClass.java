@@ -16,9 +16,8 @@
 
 package com.hivemq.plugins.metrics.graphite.plugin;
 
-import com.hivemq.spi.PluginEntryPoint;
-import com.hivemq.spi.callback.registry.CallbackRegistry;
 import com.hivemq.plugins.metrics.graphite.callbacks.GraphiteReporting;
+import com.hivemq.spi.PluginEntryPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,9 +45,7 @@ public class GraphiteMetricsMainClass extends PluginEntryPoint {
     @PostConstruct
     public void postConstruct() {
 
-        CallbackRegistry callbackRegistry = getCallbackRegistry();
-
-        callbackRegistry.addCallback(graphiteReporting);
+        getCallbackRegistry().addCallback(graphiteReporting);
     }
 
 }
