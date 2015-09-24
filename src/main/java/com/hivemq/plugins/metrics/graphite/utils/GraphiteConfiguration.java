@@ -82,7 +82,7 @@ public class GraphiteConfiguration extends ReloadingPropertiesReader {
 
     @Override
     public String getFilename() {
-        return "conf" + File.separator + "graphite-plugin.properties";
+        return "graphite-plugin.properties";
     }
 
     public void setRestartListener(final RestartListener listener) {

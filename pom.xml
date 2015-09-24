@@ -26,7 +26,6 @@
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-spi</artifactId>
             <version>3.0.0</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -84,7 +83,7 @@
                         <configuration>
                             <artifactSet>
                                 <excludes>
-                                    <exclude>com.dcsquare.hivemq:hivemq-spi</exclude>
+                                    <exclude>com.hivemq:hivemq-spi</exclude>
                                     <exclude>com.google.inject:*</exclude>
                                     <exclude>com.google.guava:*</exclude>
                                     <exclude>org.slf4j:*</exclude>
