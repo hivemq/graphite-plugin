@@ -1,12 +1,27 @@
+/*
+ * Copyright 2015 dc-square GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hivemq.plugins.metrics.graphite.utils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import com.hivemq.spi.annotations.NotNull;
+import com.hivemq.spi.config.SystemInformation;
 import com.hivemq.spi.services.PluginExecutorService;
 import com.hivemq.spi.services.configuration.ValueChangedCallback;
-import com.hivemq.spi.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,18 +42,21 @@ public abstract class ReloadingPropertiesReader {
     private static final Logger log = LoggerFactory.getLogger(GraphiteConfiguration.class);
 
     private final PluginExecutorService pluginExecutorService;
+    private final SystemInformation systemInformation;
     private File file;
     protected Properties properties;
     protected Map<String, List<ValueChangedCallback<String>>> callbacks = Maps.newHashMap();
 
-    public ReloadingPropertiesReader(final PluginExecutorService pluginExecutorService) {
+    public ReloadingPropertiesReader(final PluginExecutorService pluginExecutorService,
+                                     final SystemInformation systemInformation) {
         this.pluginExecutorService = pluginExecutorService;
+        this.systemInformation = systemInformation;
     }
 
     @PostConstruct
     public void postConstruct() {
 
-        this.file = PathUtils.findAbsoluteAndRelative(getFilename());
+        file = new File(systemInformation.getConfigFolder() + "/" + getFilename());
 
         try {
             properties = new Properties();

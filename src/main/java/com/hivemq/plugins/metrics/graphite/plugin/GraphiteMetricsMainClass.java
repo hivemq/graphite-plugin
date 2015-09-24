@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 dc-square GmbH
+ * Copyright 2015 dc-square GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import javax.inject.Inject;
  * This is the main class of the plugin, which is instanciated during the HiveMQ start up process.
  */
 public class GraphiteMetricsMainClass extends PluginEntryPoint {
-
-    private static final Logger log = LoggerFactory.getLogger(GraphiteMetricsMainClass.class);
 
     private final GraphiteReporting graphiteReporting;
 

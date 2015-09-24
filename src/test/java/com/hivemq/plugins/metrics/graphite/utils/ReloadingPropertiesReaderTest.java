@@ -1,5 +1,6 @@
 package com.hivemq.plugins.metrics.graphite.utils;
 
+import com.hivemq.spi.config.SystemInformation;
 import com.hivemq.spi.services.PluginExecutorService;
 import com.hivemq.spi.services.configuration.ValueChangedCallback;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -16,13 +17,12 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Christoph Schäbel
@@ -35,6 +35,9 @@ public class ReloadingPropertiesReaderTest {
     @Mock
     public PluginExecutorService pluginExecutorService;
 
+    @Mock
+    public SystemInformation systemInformation;
+
     private ReloadingPropertiesReader reader;
 
     private File tempFile;
@@ -44,6 +47,7 @@ public class ReloadingPropertiesReaderTest {
 
         MockitoAnnotations.initMocks(this);
 
+
         tempFile = tmpFolder.newFile(RandomStringUtils.randomAlphabetic(10) + ".properties");
 
         final Properties properties = new Properties();
@@ -52,14 +56,15 @@ public class ReloadingPropertiesReaderTest {
         properties.setProperty("key3", "value3");
         properties.store(new FileOutputStream(tempFile), "");
 
-        reader = new TestReloadingPropertiesReader(pluginExecutorService, tempFile.getAbsolutePath());
+        when(systemInformation.getConfigFolder()).thenReturn(new File(tempFile.getAbsolutePath()));
+        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, "");
 
     }
 
     @Test
     public void test_no_properties_file() throws Exception {
 
-        reader = new TestReloadingPropertiesReader(pluginExecutorService, tempFile.getAbsolutePath() + "notexisting");
+        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, "notexisting");
 
         reader.postConstruct();
 
@@ -69,7 +74,7 @@ public class ReloadingPropertiesReaderTest {
     @Test
     public void test_file_removed() throws Exception {
 
-        reader = new TestReloadingPropertiesReader(pluginExecutorService, tempFile.getAbsolutePath());
+        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, "");
 
         reader.postConstruct();
 
@@ -152,8 +157,8 @@ public class ReloadingPropertiesReaderTest {
 
         private final String filename;
 
-        public TestReloadingPropertiesReader(final PluginExecutorService pluginExecutorService, final String filename) {
-            super(pluginExecutorService);
+        public TestReloadingPropertiesReader(final PluginExecutorService pluginExecutorService, final SystemInformation systemInformation, final String filename) {
+            super(pluginExecutorService, systemInformation);
             this.filename = filename;
         }
 
