@@ -15,6 +15,8 @@
  */
 package com.hivemq.plugins.metrics.graphite.utils;
 
+import com.google.common.base.CaseFormat;
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
@@ -27,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
@@ -41,16 +44,21 @@ public abstract class ReloadingPropertiesReader {
 
     private static final Logger log = LoggerFactory.getLogger(GraphiteConfiguration.class);
 
+    private static final String ENV_VARIABLES_PREFIX = "HIVEMQ_GRAPHITE_";
+
     private final PluginExecutorService pluginExecutorService;
     private final SystemInformation systemInformation;
+    private final EnvironmentReader environmentReader;
     private File file;
     protected Properties properties;
     protected Map<String, List<ValueChangedCallback<String>>> callbacks = Maps.newHashMap();
 
     public ReloadingPropertiesReader(final PluginExecutorService pluginExecutorService,
-                                     final SystemInformation systemInformation) {
+                                     final SystemInformation systemInformation,
+                                     final EnvironmentReader environmentReader) {
         this.pluginExecutorService = pluginExecutorService;
         this.systemInformation = systemInformation;
+        this.environmentReader = environmentReader;
     }
 
     @PostConstruct
@@ -59,10 +67,10 @@ public abstract class ReloadingPropertiesReader {
         file = new File(systemInformation.getConfigFolder() + "/" + getFilename());
 
         try {
-            properties = new Properties();
-            properties.load(new FileReader(file));
+            loadProperties();
         } catch (IOException e) {
             log.error("Not able to load configuration file {}", file.getAbsolutePath());
+            properties = new Properties();
         }
 
         pluginExecutorService.scheduleAtFixedRate(new Runnable() {
@@ -84,9 +92,7 @@ public abstract class ReloadingPropertiesReader {
         Map<String, String> oldValues = getCurrentValues();
 
         try {
-            final Properties props = new Properties();
-            props.load(new FileReader(file));
-            properties = props;
+            loadProperties();
 
             Map<String, String> newValues = getCurrentValues();
 
@@ -112,6 +118,27 @@ public abstract class ReloadingPropertiesReader {
             values.put(key, properties.getProperty(key));
         }
         return values;
+    }
+
+    private void loadProperties() throws IOException {
+        final Properties fileProperties = new Properties();
+        fileProperties.load(new FileReader(file));
+
+        final Map<String, String> propertiesMap = Maps.newHashMap(Maps.fromProperties(fileProperties));
+        for (String key : propertiesMap.keySet()) {
+            final String environmentVariableName = getEnvironmentVariableName(key);
+            final Optional<String> environmentVariableValue = environmentReader.getEnvironmentVariable(environmentVariableName);
+
+            if (environmentVariableValue.isPresent()) {
+                propertiesMap.put(key, environmentVariableValue.get());
+            }
+        }
+        properties = new Properties();
+        properties.putAll(propertiesMap);
+    }
+
+    private String getEnvironmentVariableName(String key) {
+        return ENV_VARIABLES_PREFIX + CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, key);
     }
 
     private void logChanges(final Map<String, String> oldValues, final Map<String, String> newValues) {

@@ -1,5 +1,6 @@
 package com.hivemq.plugins.metrics.graphite.utils;
 
+import com.google.common.base.Optional;
 import com.hivemq.spi.config.SystemInformation;
 import com.hivemq.spi.services.PluginExecutorService;
 import com.hivemq.spi.services.configuration.ValueChangedCallback;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +39,9 @@ public class ReloadingPropertiesReaderTest {
 
     @Mock
     public SystemInformation systemInformation;
+
+    @Mock
+    public EnvironmentReader environmentReader;
 
     private ReloadingPropertiesReader reader;
 
@@ -57,14 +62,15 @@ public class ReloadingPropertiesReaderTest {
         properties.store(new FileOutputStream(tempFile), "");
 
         when(systemInformation.getConfigFolder()).thenReturn(new File(tempFile.getAbsolutePath()));
-        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, "");
+        when(environmentReader.getEnvironmentVariable(anyString())).thenReturn(Optional.<String>absent());
+        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, environmentReader, "");
 
     }
 
     @Test
     public void test_no_properties_file() throws Exception {
 
-        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, "notexisting");
+        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, environmentReader, "notexisting");
 
         reader.postConstruct();
 
@@ -74,7 +80,7 @@ public class ReloadingPropertiesReaderTest {
     @Test
     public void test_file_removed() throws Exception {
 
-        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, "");
+        reader = new TestReloadingPropertiesReader(pluginExecutorService, systemInformation, environmentReader,"");
 
         reader.postConstruct();
 
@@ -112,6 +118,29 @@ public class ReloadingPropertiesReaderTest {
         reader.reload();
 
         assertEquals("othervalue1", reader.getProperties().get("key1"));
+    }
+
+    @Test
+    public void test_reload_with_overriden_properties() throws Exception {
+
+        final Properties properties = new Properties();
+        properties.setProperty("camelCaseExample", "camelCaseValue");
+        properties.setProperty("key1", "value1");
+        properties.store(new FileOutputStream(tempFile), "");
+
+
+        reader.postConstruct();
+
+        assertEquals("value1", reader.getProperties().get("key1"));
+        assertEquals("camelCaseValue", reader.getProperties().get("camelCaseExample"));
+
+        when(environmentReader.getEnvironmentVariable("HIVEMQ_GRAPHITE_KEY1")).thenReturn(Optional.of("overriden_value_1"));
+        when(environmentReader.getEnvironmentVariable("HIVEMQ_GRAPHITE_CAMEL_CASE_EXAMPLE")).thenReturn(Optional.of("overriden_value_2"));
+
+        reader.reload();
+
+        assertEquals("overriden_value_1", reader.getProperties().get("key1"));
+        assertEquals("overriden_value_2", reader.getProperties().get("camelCaseExample"));
     }
 
     @Test
@@ -153,12 +182,32 @@ public class ReloadingPropertiesReaderTest {
         assertEquals("value3", reader.getProperties().get("key3"));
     }
 
+    @Test
+    public void test_overriden_getProperties_with_environment_variables() throws Exception {
+        final Properties properties = new Properties();
+        properties.setProperty("camelCaseExample", "camelCaseValue");
+        properties.setProperty("key1", "value1");
+        properties.store(new FileOutputStream(tempFile), "");
+
+
+        when(environmentReader.getEnvironmentVariable("HIVEMQ_GRAPHITE_KEY1")).thenReturn(Optional.of("overriden_value_1"));
+        when(environmentReader.getEnvironmentVariable("HIVEMQ_GRAPHITE_CAMEL_CASE_EXAMPLE")).thenReturn(Optional.of("overriden_value_2"));
+
+        reader.postConstruct();
+
+        assertEquals("overriden_value_1", reader.getProperties().get("key1"));
+        assertEquals("overriden_value_2", reader.getProperties().get("camelCaseExample"));
+    }
+
     private static class TestReloadingPropertiesReader extends ReloadingPropertiesReader {
 
         private final String filename;
 
-        public TestReloadingPropertiesReader(final PluginExecutorService pluginExecutorService, final SystemInformation systemInformation, final String filename) {
-            super(pluginExecutorService, systemInformation);
+        public TestReloadingPropertiesReader(final PluginExecutorService pluginExecutorService,
+                                             final SystemInformation systemInformation,
+                                             final EnvironmentReader environmentReader,
+                                             final String filename) {
+            super(pluginExecutorService, systemInformation, environmentReader);
             this.filename = filename;
         }
 
@@ -167,6 +216,4 @@ public class ReloadingPropertiesReaderTest {
             return filename;
         }
     }
-
-
 }
