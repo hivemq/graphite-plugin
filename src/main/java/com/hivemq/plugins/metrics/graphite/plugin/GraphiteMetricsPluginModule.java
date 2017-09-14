@@ -27,7 +27,7 @@ import com.hivemq.spi.plugin.meta.Information;
 /**
  * @author Christoph Schaebel
  */
-@Information(name = "HiveMQ Graphite Metrics Plugin", author = "dc-square GmbH", version = "3.0.0")
+@Information(name = "HiveMQ Graphite Metrics Plugin", author = "dc-square GmbH", version = "3.1.1")
 public class GraphiteMetricsPluginModule extends HiveMQPluginModule {
 
     /**
