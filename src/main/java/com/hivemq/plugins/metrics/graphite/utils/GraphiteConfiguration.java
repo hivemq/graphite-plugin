@@ -36,8 +36,9 @@ public class GraphiteConfiguration extends ReloadingPropertiesReader {
 
     @Inject
     public GraphiteConfiguration(final PluginExecutorService pluginExecutorService,
-                                 final SystemInformation systemInformation) {
-        super(pluginExecutorService, systemInformation);
+                                 final SystemInformation systemInformation,
+                                 final EnvironmentReader environmentReader) {
+        super(pluginExecutorService, systemInformation, environmentReader);
 
         final ValueChangedCallback callback = new ValueChangedCallback() {
             @Override
