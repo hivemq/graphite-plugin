@@ -16,6 +16,9 @@
 
 package com.hivemq.plugins.metrics.graphite.plugin;
 
+import com.google.inject.Singleton;
+import com.hivemq.plugins.metrics.graphite.utils.EnvironmentReader;
+import com.hivemq.plugins.metrics.graphite.utils.SystemEnvironmentReader;
 import com.hivemq.spi.HiveMQPluginModule;
 import com.hivemq.spi.PluginEntryPoint;
 import com.hivemq.spi.plugin.meta.Information;
@@ -24,7 +27,7 @@ import com.hivemq.spi.plugin.meta.Information;
 /**
  * @author Christoph Schaebel
  */
-@Information(name = "HiveMQ Graphite Metrics Plugin", author = "dc-square GmbH", version = "3.0.0")
+@Information(name = "HiveMQ Graphite Metrics Plugin", author = "dc-square GmbH", version = "3.1.1")
 public class GraphiteMetricsPluginModule extends HiveMQPluginModule {
 
     /**
@@ -33,6 +36,7 @@ public class GraphiteMetricsPluginModule extends HiveMQPluginModule {
      */
     @Override
     protected void configurePlugin() {
+        bind(EnvironmentReader.class).to(SystemEnvironmentReader.class).in(Singleton.class);
     }
 
     /**
