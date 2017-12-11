@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2015 dc-square GmbH
+  ~ Copyright 2017 dc-square GmbH
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 
     <groupId>com.hivemq.plugins.metrics.graphite</groupId>
     <artifactId>hivemq-graphite-metrics-plugin</artifactId>
-    <version>3.1.1</version>
+    <version>3.1.2</version>
 
 
     <dependencies>
@@ -121,7 +121,32 @@
                             </execution>
                         </executions>
                     </plugin>
-
+                    <plugin>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctor-maven-plugin</artifactId>
+                        <version>1.5.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>output-html</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>process-asciidoc</goal>
+                                </goals>
+                                <configuration>
+                                    <backend>html</backend>
+                                    <doctype>xhtml</doctype>
+                                    <headerFooter>true</headerFooter>
+                                    <sourceDirectory>${basedir}</sourceDirectory>
+                                    <outputDirectory>${basedir}/target</outputDirectory>
+                                    <sourceDocumentName>README.adoc</sourceDocumentName>
+                                    <attributes>
+                                        <icons>font</icons>
+                                        <toc2/>
+                                    </attributes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
