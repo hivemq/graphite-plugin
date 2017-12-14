@@ -98,13 +98,13 @@ public abstract class ReloadingPropertiesReader {
      */
     void reload() {
 
-        Properties oldProperties = (Properties) properties.clone(); //deep copies are needed
-        Map<String, String> oldValues = getCurrentValues();
+        final Properties oldProperties = (Properties) properties.clone(); //deep copies are needed
+        final Map<String, String> oldValues = getCurrentValues();
 
         try {
             loadProperties();
 
-            Map<String, String> newValues = getCurrentValues();
+            final Map<String, String> newValues = getCurrentValues();
 
             //test whether currentValues makes sense, if not rollback to the old values
             if (validateProperties(properties)) {
@@ -121,22 +121,24 @@ public abstract class ReloadingPropertiesReader {
 
     private boolean validateProperties(final Properties newProperties) {
 
+        Boolean ret = true;
+
         if (!validatePort(newProperties.getProperty(PORT_KEY))) {
-            return false;
+            ret = false;
         }
 
         if (!validateBatchMode(newProperties.getProperty(BATCH_MODE_KEY))) {
-            return false;
+            ret = false;
         }
 
         if (!validateBatchSize(newProperties.getProperty(BATCH_SIZE_KEY))) {
-            return false;
+            ret = false;
         }
 
         if (!validateReportingInterval(newProperties.getProperty(REPORTING_INTERVAL_KEY))) {
-            return false;
+            ret = false;
         }
-        return true;
+        return ret;
     }
 
     private boolean validateReportingInterval(final String stringReportingInterval) {
@@ -179,10 +181,10 @@ public abstract class ReloadingPropertiesReader {
         return true;
     }
 
-    private boolean validatePort(String stringPort) {
-        int port;
+    private boolean validatePort(final String stringPort) {
+        final int port;
         try {
-            port = Integer.parseInt(stringPort);
+             port = Integer.parseInt(stringPort);
 
         } catch (Exception e) {
             log.warn("Port is configured false: {}. Can not parse port", stringPort);

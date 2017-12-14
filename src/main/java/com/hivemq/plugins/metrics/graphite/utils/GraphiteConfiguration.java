@@ -57,9 +57,7 @@ public class GraphiteConfiguration extends ReloadingPropertiesReader {
             }
         };
 
-
         addCallback(ReloadingPropertiesReader.HOST_KEY, callback);
-
         addCallback(ReloadingPropertiesReader.PORT_KEY, callback);
         addCallback(ReloadingPropertiesReader.BATCH_SIZE_KEY, callback);
         addCallback(ReloadingPropertiesReader.BATCH_MODE_KEY, callback);
@@ -72,7 +70,7 @@ public class GraphiteConfiguration extends ReloadingPropertiesReader {
     }
 
     public String getHost() {
-        String strHost = properties.getProperty(ReloadingPropertiesReader.HOST_KEY);
+        final String strHost = properties.getProperty(ReloadingPropertiesReader.HOST_KEY);
         if (strHost == null) {
             log.error("Host configuration for Graphite Plugin is missing. Shutting down HiveMQ");
             throw new UnrecoverableException(false);
@@ -81,7 +79,7 @@ public class GraphiteConfiguration extends ReloadingPropertiesReader {
     }
 
     public int getPort() {
-        String strPort = properties.getProperty(ReloadingPropertiesReader.PORT_KEY);
+        final String strPort = properties.getProperty(ReloadingPropertiesReader.PORT_KEY);
         if (strPort == null) {
             log.error("Port configuration for Graphite Plugin is missing. Shutting down HiveMQ");
             throw new UnrecoverableException(false);
@@ -125,9 +123,9 @@ public class GraphiteConfiguration extends ReloadingPropertiesReader {
         this.listener = listener;
     }
 
-    public static interface RestartListener {
+    public  interface RestartListener {
 
-        public void restart();
+         void restart();
 
     }
 }
