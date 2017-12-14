@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 dc-square GmbH
+ * Copyright 2017 dc-square GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hivemq.spi.plugin.meta.Information;
 /**
  * @author Christoph Schaebel
  */
-@Information(name = "HiveMQ Graphite Metrics Plugin", author = "dc-square GmbH", version = "3.1.1")
+@Information(name = "HiveMQ Graphite Metrics Plugin", author = "dc-square GmbH", version = "3.1.2")
 public class GraphiteMetricsPluginModule extends HiveMQPluginModule {
 
     /**

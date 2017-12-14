@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2015 dc-square GmbH
+  ~ Copyright 2017 dc-square GmbH
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
   ~  you may not use this file except in compliance with the License.
@@ -31,7 +31,12 @@
             <outputDirectory>/</outputDirectory>
         </file>
         <file>
-            <source>README.txt</source>
+            <source>target/README.html</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+        <file>
+            <source>README.adoc</source>
+            <destName>README.txt</destName>
             <outputDirectory>/</outputDirectory>
         </file>
         <file>
