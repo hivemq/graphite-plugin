@@ -61,8 +61,12 @@ public class GraphiteReporting implements OnBrokerStart, OnBrokerStop {
     }
 
     @Override
-    public void onBrokerStop() {
-        reporter.stop();
+    public void onBrokerStop()
+    {
+       //if reporter was not initiated yet
+        if(reporter != null){
+            reporter.stop();
+        }
     }
 
     @Override

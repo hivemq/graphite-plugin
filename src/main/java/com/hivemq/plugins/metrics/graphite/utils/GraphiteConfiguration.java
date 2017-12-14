@@ -89,7 +89,7 @@ public class GraphiteConfiguration extends ReloadingPropertiesReader {
         try {
             return Integer.parseInt(strPort);
         } catch (Exception e) {
-            log.error("Port configuration for Graphite Plugin could not be parsed", e);
+            log.error("Port configuration for Graphite Plugin could not be parsed. Shutting down HiveMQ", e);
             throw new UnrecoverableException(false);
         }
     }
