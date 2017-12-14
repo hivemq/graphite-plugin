@@ -6,3 +6,4 @@
 /.idea/
 /hivemq-hello-world-plugin.iml
 dependency-reduced-pom.xml
+*.iml

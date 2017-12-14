@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 dc-square GmbH
+ * Copyright 2017 dc-square GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,8 +61,12 @@ public class GraphiteReporting implements OnBrokerStart, OnBrokerStop {
     }
 
     @Override
-    public void onBrokerStop() {
-        reporter.stop();
+    public void onBrokerStop()
+    {
+       //if reporter was not initiated yet
+        if(reporter != null){
+            reporter.stop();
+        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 dc-square GmbH
+ * Copyright 2017 dc-square GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
@@ -42,16 +41,26 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class ReloadingPropertiesReader {
 
-    private static final Logger log = LoggerFactory.getLogger(GraphiteConfiguration.class);
+    static final String HOST_KEY = "host";
+    static final String PORT_KEY = "port";
+    static final String BATCH_MODE_KEY = "batchMode";
+    static final String BATCH_SIZE_KEY = "batchSize";
+    static final String REPORTING_INTERVAL_KEY = "reportingInterval";
+    static final String PREFIX_KEY = "prefix";
 
+    private static final Logger log = LoggerFactory.getLogger(GraphiteConfiguration.class);
     private static final String ENV_VARIABLES_PREFIX = "HIVEMQ_GRAPHITE_";
+    private static final String[] PROP_KEYS = new String[]{
+            HOST_KEY, PORT_KEY, BATCH_MODE_KEY, BATCH_SIZE_KEY, REPORTING_INTERVAL_KEY, PREFIX_KEY
+    };
+
 
     private final PluginExecutorService pluginExecutorService;
     private final SystemInformation systemInformation;
     private final EnvironmentReader environmentReader;
-    private File file;
     protected Properties properties;
     protected Map<String, List<ValueChangedCallback<String>>> callbacks = Maps.newHashMap();
+    private File file;
 
     public ReloadingPropertiesReader(final PluginExecutorService pluginExecutorService,
                                      final SystemInformation systemInformation,
@@ -87,23 +96,111 @@ public abstract class ReloadingPropertiesReader {
     /**
      * Reloads the specified .properties file
      */
-    public void reload() {
+    void reload() {
 
-        Map<String, String> oldValues = getCurrentValues();
+        final Properties oldProperties = (Properties) properties.clone(); //deep copies are needed
+        final Map<String, String> oldValues = getCurrentValues();
 
         try {
             loadProperties();
 
-            Map<String, String> newValues = getCurrentValues();
+            final Map<String, String> newValues = getCurrentValues();
 
-            logChanges(oldValues, newValues);
-
+            //test whether currentValues makes sense, if not rollback to the old values
+            if (validateProperties(properties)) {
+                logChanges(oldValues, newValues);
+            } else {
+                //ignore the new values and use old
+                log.warn("New values in the configurationFile are ignored, because they contain errors");
+                properties = oldProperties;
+            }
         } catch (IOException e) {
             log.debug("Not able to reload configuration file {}", this.file.getAbsolutePath());
         }
     }
 
-    public void addCallback(final String propertyName, final ValueChangedCallback<String> changedCallback) {
+    private boolean validateProperties(final Properties newProperties) {
+
+        Boolean ret = true;
+
+        if (!validatePort(newProperties.getProperty(PORT_KEY))) {
+            ret = false;
+        }
+
+        if (!validateBatchMode(newProperties.getProperty(BATCH_MODE_KEY))) {
+            ret = false;
+        }
+
+        if (!validateBatchSize(newProperties.getProperty(BATCH_SIZE_KEY))) {
+            ret = false;
+        }
+
+        if (!validateReportingInterval(newProperties.getProperty(REPORTING_INTERVAL_KEY))) {
+            ret = false;
+        }
+        return ret;
+    }
+
+    private boolean validateReportingInterval(final String stringReportingInterval) {
+        if (stringReportingInterval == null) { //using default is ok
+            return true;
+        }
+        try {
+            Integer.parseInt(stringReportingInterval);
+        } catch (Exception e) {
+            log.warn("reportingInterval is configured false: {}. Value must be an integer", stringReportingInterval);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validateBatchSize(final String stringBatchSize) {
+        if (stringBatchSize == null) {  //using default is ok
+            return true;
+        }
+
+        try {
+            Integer.parseInt(stringBatchSize);
+        } catch (Exception e) {
+            log.warn("batchSize is configured false: {}. Value must be an integer", stringBatchSize);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validateBatchMode(final String stringBatchMode) {
+        if (stringBatchMode == null) {
+            return true; //batchMode not set is ok
+        }
+        if (!(stringBatchMode.equals("false") || (stringBatchMode.equals("true")))) {
+            log.warn("batchMode is configured false: {}. Value must be either true or false", stringBatchMode);
+            //the test with Boolean.parse() wont work because it will parse any string to false, if the string does not equal the string "true"
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validatePort(final String stringPort) {
+        final int port;
+        try {
+             port = Integer.parseInt(stringPort);
+
+        } catch (Exception e) {
+            log.warn("Port is configured false: {}. Can not parse port", stringPort);
+            return false;
+        }
+
+        if (port < 1) {
+            log.warn("Invalid port configuration. Port must be greater than 0");
+            return false;
+        }
+
+
+        return true;
+    }
+
+    void addCallback(final String propertyName, final ValueChangedCallback<String> changedCallback) {
 
         if (!callbacks.containsKey(propertyName)) {
             callbacks.put(propertyName, Lists.<ValueChangedCallback<String>>newArrayList());
@@ -122,13 +219,13 @@ public abstract class ReloadingPropertiesReader {
 
     private void loadProperties() throws IOException {
         final Properties fileProperties = new Properties();
+
         fileProperties.load(new FileReader(file));
 
         final Map<String, String> propertiesMap = Maps.newHashMap(Maps.fromProperties(fileProperties));
-        for (String key : propertiesMap.keySet()) {
+        for (String key : PROP_KEYS) {
             final String environmentVariableName = getEnvironmentVariableName(key);
             final Optional<String> environmentVariableValue = environmentReader.getEnvironmentVariable(environmentVariableName);
-
             if (environmentVariableValue.isPresent()) {
                 propertiesMap.put(key, environmentVariableValue.get());
             }
@@ -137,7 +234,7 @@ public abstract class ReloadingPropertiesReader {
         properties.putAll(propertiesMap);
     }
 
-    private String getEnvironmentVariableName(String key) {
+    private String getEnvironmentVariableName(final String key) {
         return ENV_VARIABLES_PREFIX + CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, key);
     }
 
@@ -158,15 +255,25 @@ public abstract class ReloadingPropertiesReader {
 
         for (Map.Entry<String, String> stringStringEntry : difference.entriesOnlyOnLeft().entrySet()) {
             log.debug("Plugin configuration {} removed", stringStringEntry.getKey(), stringStringEntry.getValue());
+            if (callbacks.containsKey(stringStringEntry.getKey())) {
+                for (ValueChangedCallback<String> callback : callbacks.get(stringStringEntry.getKey())) {
+                    callback.valueChanged(properties.getProperty(stringStringEntry.getValue()));
+                }
+            }
         }
 
         for (Map.Entry<String, String> stringStringEntry : difference.entriesOnlyOnRight().entrySet()) {
-            log.debug("Plugin configuration {} added: {}", stringStringEntry.getValue(), stringStringEntry.getValue());
+            log.debug("Plugin configuration {} added: {}", stringStringEntry.getKey(), stringStringEntry.getValue());
+            if (callbacks.containsKey(stringStringEntry.getKey())) {
+                for (ValueChangedCallback<String> callback : callbacks.get(stringStringEntry.getKey())) {
+                    callback.valueChanged(stringStringEntry.getValue());
+                }
+            }
         }
     }
 
     @NotNull
-    public Properties getProperties() {
+    Properties getProperties() {
         return properties;
     }
 
